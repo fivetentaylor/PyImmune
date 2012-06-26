@@ -51,6 +51,7 @@ def ga(pop, gen):
         i += 1
         
 
+x = initPop(POP)
 m = bin(x[0])[2:64].rjust(64,'0')
 n = bin(x[1])[2:64].rjust(64,'0')
 o = bin(x[0]^x[1])[2:64].rjust(64,'0')
