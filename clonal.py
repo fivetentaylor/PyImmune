@@ -13,6 +13,9 @@ i = 0
 x = [0] * popSize
 
 
+# GLOBALS
+POP = 100
+GUESS = 5
 while i < popSize:
     #print 'random: ' + str(random.getrandbits(64))
     x[i] = random.getrandbits(32)
