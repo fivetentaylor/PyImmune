@@ -1,6 +1,11 @@
 import random
 
-# Helper functions
+# GLOBALS
+GEN = 1000
+POP = 100
+GUESS = 5
+THRESHOLD = 16
+
 def hamdist(str1, str2):
     diffs = 0
     for ch1, ch2 in zip(str1, str2):
