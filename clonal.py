@@ -1,7 +1,6 @@
 import random
 import math
 
-# 
 class antibody:
     chromosome = 64
     learning = 5
@@ -23,28 +22,35 @@ class antibody:
         return diffs
     def mutate( self ):
         flipChro = math.floor( (1-self.lastFitness)*antibody.chromosome )
-        flipMem = math.floor( (1-self.lastFitness)*antibody.learning )
+        flipLearn = math.floor( self.lastFitness*antibody.learning )
         mask = 0
         while flipChro > 0:
             mask = (1<<random.randint(0,antibody.chromosome))^mask
             flipChro -= 1
         self.chromosome ^= mask
         mask = 0
-        while flipMem > 0:
+        while flipLearn> 0:
             mask = (1<<random.randint(0,antibody.learning))^mask
-            flipMem -= 1
+            flipLearn -= 1
         self.learning ^= mask           
         return
-    def learn( self ):
-        return math.floor(random.random() * self.learning)
+    def learn( self, h ):
+        learned = math.floor(random.random()*self.learning)
+        if learned < (antibody.chromosome - h):
+            return learned
+        else:
+            return (antibody.chromosome - h)
     def fitness( self, antigen ):
         h = self.hamdist( antigen )
         i = 0
         l = 0
-        while (h+l < self.threshold) and (i < self.guesses):
-            l = self.learn()
+        while ((h+l) < self.threshold) and (i < self.guesses):
+            l = self.learn(h)
             i += 1
-        return (2*h-self.threshold)/antibody.chromosome
+        if (h+l > self.threshold):
+            return ((h+l-i*2)/antibody.chromosome)
+        else:
+            return 0
         
         
 
@@ -65,6 +71,25 @@ class ga:
             self.population[i] = antibody()
         for i, n in enumerate(self.antigens):
             self.antigens[i] = random.getrandbits( 64 )
+    def sort( self ):
+        self.population.sort( lambda a,b: cmp(a.lastFitness,b.lastFitness) )
+        return
+    def mask( self, point ):
+        # create bit mask from point
+        mask = 0
+        i = 0
+        while i < point:
+            mask = (mask<<1) + 1
+            i += 1
+        return mask
+    def crossover( self, anti_1, anti_2 ):
+        # crossover with random point
+        x = antibody.chromosome
+        crossover = random.randint(0, x)
+        mask = self.mask(crossover)
+        anti_a = (anti_1&(~mask))|(anti_2&mask)
+        anti_b = (anti_1&mask)|(anti_2&(~mask))
+        return [anti_a, anti_b]
     def breed( self ):
         # Create the new population from the survivors
         for antibody in self.population:
@@ -107,6 +132,7 @@ class ga:
             print
             i += 1
         return self.population
+
 
 ga = ga()
 ga.run()
