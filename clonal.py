@@ -1,61 +1,113 @@
 import random
+import math
 
-# GLOBALS
-GEN = 1000
-POP = 100
-GUESS = 5
-THRESHOLD = 16
-
-# functions
-def hamdist(str1, str2):
-    '''Stole from ActiveState, not the most efficient hamming distance function ever...'''
-    diffs = 0
-    for ch1, ch2 in zip(str1, str2):
-        if ch1 != ch2:
-            diffs += 1
-    return diffs
-
-def initPop( size ):
-    i = 0
-    population = [0] * size
-    random.seed()
-    while i < size:
-        #print 'random: ' + str(random.getrandbits(64))
-        population[i] = random.getrandbits(32)
-        i += 1
-    return population
-
-def breed( pop ):
-    # spawn new children with some rule?
-    return
-
-def fitness( antibody, antigen ):
-    # Something should be happening here with guessing on the antibodies part
-    # antibody and antigen should be integers
-    m = bin(antibody[0])[2:64].rjust(64,'0')
-    n = bin(anitgen[1])[2:64].rjust(64,'0')
-    return hamdist( m,n )
-
-def replace( pop, antigen ):
-    for i, member in pop:
-        val = fitness( member, antigen )
-        if val < THRESHOLD:
-            x[i] = 123 #new?  This is where mutation should happen
-    return pop
-
-def ga(pop, gen):
-    i = 0
-    antigen = 99 #???
-    while i < gen:
-        replace( pop, antigen )
-        i += 1
+# 
+class antibody:
+    chromosome = 64
+    learning = 5
+    guesses = 4
+    threshold = 48
+    def __init__( self ):
+        random.seed()
+        self.lastFitness = 0
+        self.chromosome = random.getrandbits( antibody.chromosome ) 
+        self.learning = random.getrandbits( antibody.learning )
+        self.guesses = antibody.guesses
+        self.threshold = antibody.threshold
+    def hamdist( self, antigen ):
+        diffs = 0
+        ham = self.chromosome ^ antigen
+        for ch in bin(ham):
+            if ch == '1':
+                diffs += 1
+        return diffs
+    def mutate( self ):
+        flipChro = math.floor( (1-self.lastFitness)*antibody.chromosome )
+        flipMem = math.floor( (1-self.lastFitness)*antibody.learning )
+        mask = 0
+        while flipChro > 0:
+            mask = (1<<random.randint(0,antibody.chromosome))^mask
+            flipChro -= 1
+        self.chromosome ^= mask
+        mask = 0
+        while flipMem > 0:
+            mask = (1<<random.randint(0,antibody.learning))^mask
+            flipMem -= 1
+        self.learning ^= mask           
+        return
+    def learn( self ):
+        return math.floor(random.random() * self.learning)
+    def fitness( self, antigen ):
+        h = self.hamdist( antigen )
+        i = 0
+        l = 0
+        while (h+l < self.threshold) and (i < self.guesses):
+            l = self.learn()
+            i += 1
+        return (2*h-self.threshold)/antibody.chromosome
+        
         
 
-x = initPop(POP)
-m = bin(x[0])[2:64].rjust(64,'0')
-n = bin(x[1])[2:64].rjust(64,'0')
-o = bin(x[0]^x[1])[2:64].rjust(64,'0')
-print m
-print n
-print o
-print hamdist( m,n )
+class ga:
+    generations = 100
+    population = 100
+    antigens = 8
+    threshold = 48
+    def __init__( self ):
+        self.bestFitness = 0.0
+        self.worstFitness = 100.0
+        self.avgFitness = 0.0
+        self.generations = ga.generations
+        self.threshold = ga.threshold
+        self.population = [None] * ga.population
+        self.antigens = [None] * ga.antigens
+        for i, n in enumerate(self.population):
+            self.population[i] = antibody()
+        for i, n in enumerate(self.antigens):
+            self.antigens[i] = random.getrandbits( 64 )
+    def breed( self ):
+        # Create the new population from the survivors
+        for antibody in self.population:
+            antibody.mutate()
+        return
+    def select( self ):
+        survivors = []
+        self.avgFitness = 0.0
+        self.bestFitness = 0.0
+        self.worstFitness = 100.0
+        n = 0
+        for antibody in self.population:
+            fitness = 0.0
+            i = 0
+            while i < len(self.antigens):
+                fitness += antibody.fitness(self.antigens[i])
+                i += 1
+            fitness = fitness / i
+            antibody.lastFitness = fitness
+            #if fitness > self.threshold:
+            survivors.append(antibody)
+            if(fitness > self.bestFitness):
+                self.bestFitness = fitness
+            if(fitness < self.worstFitness):
+                self.worstFitness = fitness
+            self.avgFitness += fitness
+            n += 1
+        self.avgFitness /= n
+        return survivors
+    def run( self ):
+        i = 0
+        while i < self.generations:
+            #self.population = self.breed(self.select())
+            self.population = self.select()
+            self.breed()
+            print 'generation %d' % i
+            print 'best fitness: %f' % (self.bestFitness*100)
+            print 'worst fitness: %f' % (self.worstFitness*100)
+            print 'avg fitness: %f' % (self.avgFitness*100)
+            print
+            i += 1
+        return self.population
+
+ga = ga()
+ga.run()
+
