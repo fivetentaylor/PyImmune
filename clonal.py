@@ -72,28 +72,36 @@ class ga:
         for i, n in enumerate(self.antigens):
             self.antigens[i] = random.getrandbits( 64 )
     def sort( self ):
-        self.population.sort( lambda a,b: cmp(a.lastFitness,b.lastFitness) )
+        self.population.sort( lambda a,b: cmp(b.lastFitness,a.lastFitness) )
         return
     def mask( self, point ):
-        # create bit mask from point
+        # create bit mask around point
         mask = 0
         i = 0
         while i < point:
             mask = (mask<<1) + 1
             i += 1
         return mask
-    def crossover( self, anti_1, anti_2 ):
-        # crossover with random point
-        x = antibody.chromosome
-        crossover = random.randint(0, x)
-        mask = self.mask(crossover)
-        anti_a = (anti_1&(~mask))|(anti_2&mask)
-        anti_b = (anti_1&mask)|(anti_2&(~mask))
-        return [anti_a, anti_b]
+    def crossover( self, a, b, length ):
+        # crossover at random point from 0 to length
+        cross = random.randint(0, length)
+        mask = self.mask(cross)
+        c = (a&(~mask))|(b&mask)
+        d = (a&mask)|(b&(~mask))
+        return [c, d]
     def breed( self ):
         # Create the new population from the survivors
-        for antibody in self.population:
-            antibody.mutate()
+        self.sort()
+        half = 50
+        i = 0
+        while i < half:
+            c = self.crossover( self.population[i].chromosome, self.population[i+1].chromosome, antibody.chromosome )
+            self.population[50+i].chromosome = c[0]
+            self.population[51+i].chromosome = c[1]
+            l = self.crossover( self.population[i].learning, self.population[i+1].learning, antibody.learning )
+            self.population[50+i].learning = l[0]
+            self.population[51+i].learning = l[1]
+            i += 2
         return
     def select( self ):
         survivors = []
