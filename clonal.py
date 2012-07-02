@@ -55,7 +55,7 @@ class antibody:
         
 
 class ga:
-    generations = 100
+    generations = 50
     population = 100
     antigens = 8
     threshold = 48
